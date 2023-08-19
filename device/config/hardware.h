@@ -1,0 +1,2 @@
+#define BUTTON_BOOTSEL
+#define BUTTON_STATE_ACTIVE   0

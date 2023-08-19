@@ -1,0 +1,9 @@
+[submodule "device_pwy/sdk"]
+	path = device_pwy/sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+[submodule "sdk"]
+	path = sdk
+	url = https://github.com/raspberrypi/pico-sdk.git
+[submodule "device/sdk"]
+	path = device/sdk
+	url = https://github.com/raspberrypi/pico-sdk.git

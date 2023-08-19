@@ -1,0 +1,74 @@
+name: If a new tag is pushed, build and release a new version
+run-name: Build and release a new version
+# create a new release if a new tag is pushed
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-pwa:
+    runs-on: ubuntu-latest
+    name: Build picotype PWA
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        working-directory: ./pwa
+        run: yarn install --frozen-lockfile
+      - name: Build
+        working-directory: ./pwa
+        run: yarn build
+      - name: Fix permissions
+        working-directory: ./pwa
+        run: |
+          chmod -c -R +rX "build/" | while read line; do
+            echo "::warning title=Invalid file permissions automatically fixed::$line"
+          done
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          artifact-name: pwa
+          path: ./pwa/build
+          if-no-files-found: error
+          retention-days: 1
+  build-firmware:
+    runs-on: ubuntu-latest
+    name: Build firmware and upload firmware.u2f via cmake as artifact
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build
+        working-directory: ./firmware
+        run: |
+          mkdir -p build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make -j$(nproc)
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: firmware
+          path: ./firmware/build/firmware.u2f
+          if-no-files-found: error
+          retention-days: 1
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create a new release
+    needs: [ build-pwa, build-firmware ]
+    steps:
+      - name: Create release
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: release } = await github.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: context.ref,
+              name: context.ref,
+              body: context.payload.head_commit.message,
+              draft: false,
+              prerelease: false,
+            });
+            core.setOutput('release_id', release.id);
+

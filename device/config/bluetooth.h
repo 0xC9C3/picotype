@@ -1,0 +1,1 @@
+#define MAX_NR_CONNECTIONS 3
