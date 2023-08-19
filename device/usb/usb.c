@@ -1,6 +1,44 @@
 #include "bsp/board.h"
 #include "tusb.h"
 #include "usb_descriptors.h"
+#include "btstack_util.h"
+
+// key report queue
+#define KEYBOARD_REPORT_QUEUE_SZ 1024
+static uint8_t keyboard_report_queue[KEYBOARD_REPORT_QUEUE_SZ][8];
+static uint8_t keyboard_report_queue_head = 0;
+static uint8_t keyboard_report_queue_tail = 0;
+
+void keyboard_report_enqueue(uint8_t const *report) {
+    uint8_t next_head = (keyboard_report_queue_head + 1) % KEYBOARD_REPORT_QUEUE_SZ;
+
+    if (next_head != keyboard_report_queue_tail) {
+        memcpy(keyboard_report_queue[keyboard_report_queue_head], report, 8);
+        keyboard_report_queue_head = next_head;
+    }
+}
+
+bool keyboard_report_queue_full() {
+    return (keyboard_report_queue_head + 1) % KEYBOARD_REPORT_QUEUE_SZ == keyboard_report_queue_tail;
+}
+
+bool keyboard_report_queue_has_entries() {
+    return keyboard_report_queue_head != keyboard_report_queue_tail;
+}
+
+bool keyboard_report_dequeue(uint8_t *report) {
+    if (keyboard_report_queue_head == keyboard_report_queue_tail) return false;
+
+    memcpy(report, keyboard_report_queue[keyboard_report_queue_tail], 8);
+    keyboard_report_queue_tail = (keyboard_report_queue_tail + 1) % KEYBOARD_REPORT_QUEUE_SZ;
+
+    return true;
+}
+
+void keyboard_release_all() {
+    uint8_t report[8] = {0};
+    tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, report + 2);
+}
 
 uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_type_t report_type, uint8_t *buffer,
                                uint16_t reqlen) {
@@ -14,88 +52,24 @@ uint16_t tud_hid_get_report_cb(uint8_t instance, uint8_t report_id, hid_report_t
     return 0;
 }
 
-static void send_hid_report(uint8_t report_id, uint32_t btn) {
-    // skip if hid is not ready yet
-    if (!tud_hid_ready()) {
-        //printf("skip hid report, not ready\n");
-        return;
+void ascii_to_hid_keyboard(uint8_t chr, uint8_t report[8], bool swap_z_y) {
+    uint8_t const conv_table[128][2] = {HID_ASCII_TO_KEYCODE};
+
+    uint8_t keycode[6] = {0};
+    uint8_t modifier = 0;
+
+    if (conv_table[chr][0]) modifier = KEYBOARD_MODIFIER_LEFTSHIFT;
+    keycode[0] = conv_table[chr][1];
+
+    // bandaids for swapped z and y (german keyboard)
+    if (swap_z_y) {
+        if (keycode[0] == HID_KEY_Z) keycode[0] = HID_KEY_Y;
+        else if (keycode[0] == HID_KEY_Y) keycode[0] = HID_KEY_Z;
     }
 
-    // printf("send hid report %u\n", report_id);
-
-    switch (report_id) {
-        case REPORT_ID_KEYBOARD: {
-            // use to avoid send multiple consecutive zero report for keyboard
-            static bool has_keyboard_key = false;
-
-            if (btn) {
-                uint8_t keycode[6] = {0};
-                keycode[0] = HID_KEY_A;
-
-                tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, keycode);
-                has_keyboard_key = true;
-            } else {
-                // send empty key report if previously has key pressed
-                if (has_keyboard_key) tud_hid_keyboard_report(REPORT_ID_KEYBOARD, 0, NULL);
-                has_keyboard_key = false;
-            }
-        }
-            break;
-
-        case REPORT_ID_MOUSE: {
-            int8_t const delta = 5;
-
-            // no button, right + down, no scroll, no pan
-            tud_hid_mouse_report(REPORT_ID_MOUSE, 0x00, delta, delta, 0, 0);
-        }
-            break;
-
-        case REPORT_ID_CONSUMER_CONTROL: {
-            // use to avoid send multiple consecutive zero report
-            static bool has_consumer_key = false;
-
-            if (btn) {
-                // volume down
-                uint16_t volume_down = HID_USAGE_CONSUMER_VOLUME_DECREMENT;
-                tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &volume_down, 2);
-                has_consumer_key = true;
-            } else {
-                // send empty key report (release key) if previously has key pressed
-                uint16_t empty_key = 0;
-                if (has_consumer_key) tud_hid_report(REPORT_ID_CONSUMER_CONTROL, &empty_key, 2);
-                has_consumer_key = false;
-            }
-        }
-            break;
-
-        case REPORT_ID_GAMEPAD: {
-            // use to avoid send multiple consecutive zero report for keyboard
-            static bool has_gamepad_key = false;
-
-            hid_gamepad_report_t report =
-                    {
-                            .x   = 0, .y = 0, .z = 0, .rz = 0, .rx = 0, .ry = 0,
-                            .hat = 0, .buttons = 0
-                    };
-
-            if (btn) {
-                report.hat = GAMEPAD_HAT_UP;
-                report.buttons = GAMEPAD_BUTTON_A;
-                tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
-
-                has_gamepad_key = true;
-            } else {
-                report.hat = GAMEPAD_HAT_CENTERED;
-                report.buttons = 0;
-                if (has_gamepad_key) tud_hid_report(REPORT_ID_GAMEPAD, &report, sizeof(report));
-                has_gamepad_key = false;
-            }
-        }
-            break;
-
-        default:
-            break;
-    }
+    report[0] = REPORT_ID_KEYBOARD;
+    report[1] = modifier;
+    memcpy(report + 2, keycode, 6);
 }
 
 void hid_task(void) {
@@ -106,16 +80,22 @@ void hid_task(void) {
     if (board_millis() - start_ms < interval_ms) return; // not enough time
     start_ms += interval_ms;
 
-    uint32_t const btn = board_button_read();
+    if (!tud_hid_ready()) return;
 
-    // Remote wakeup
-    if (tud_suspended() && btn) {
-        // Wake up host if we are in suspend mode
-        // and REMOTE_WAKEUP feature is enabled by host
+    // if events are in queue wake up
+    if (keyboard_report_queue_has_entries() && tud_suspended()) {
         tud_remote_wakeup();
-    } else {
-        // Send the 1st of report chain, the rest will be sent by tud_hid_report_complete_cb()
-        send_hid_report(REPORT_ID_KEYBOARD, btn);
+        return;
+    }
+
+    // check if events are in queue and if yes, send next one
+    uint8_t report[8];
+    if (keyboard_report_dequeue(report)) {
+        // print debug report
+        printf("send hid report %u\n", report[0]);
+        printf_hexdump(report, 8);
+        tud_hid_keyboard_report(REPORT_ID_KEYBOARD, report[1], report + 2);
+        return;
     }
 }
 
@@ -156,12 +136,10 @@ void usb_init() {
     tusb_init();
 }
 
-__attribute__((noreturn)) void usb_loop() {
-    while (1) {
-        // tinyusb host task
-        tud_task();
+void usb_step() {
+    // tinyusb host task
+    tud_task();
 
-        // application task
-        hid_task();
-    }
+    // application task
+    hid_task();
 }

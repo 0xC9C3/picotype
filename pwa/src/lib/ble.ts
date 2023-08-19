@@ -53,6 +53,36 @@ class Ble {
 		return this.connect(device);
 	}
 
+	async connectToLastDevice() {
+		const lastDevice = settings.get('last_device');
+		if (
+			!lastDevice ||
+			settings.get('auto_connect') !== 'true' ||
+			!this._ble ||
+			this._internalConnection
+		) {
+			log.w(
+				'Not connecting to last device',
+				lastDevice,
+				this.currentConnection,
+				this._ble,
+				settings.get('auto_connect')
+			);
+			return;
+		}
+
+		try {
+			const devices = await this._ble?.getDevices();
+			const device = devices.find((d) => d.id === lastDevice);
+			if (device) {
+				log.l('Reconnecting to last device', device);
+				await this.connect(device);
+			}
+		} catch (e) {
+			log.e('Error reconnecting to last device', e);
+		}
+	}
+
 	async connect(device: BluetoothDevice) {
 		const server = await device.gatt?.connect();
 
@@ -98,10 +128,7 @@ class Ble {
 		settings.set('last_device', device.id);
 
 		// listen for disconnect
-		device.addEventListener('gattserverdisconnected', () => {
-			log.l('Disconnected from device', device);
-			this.currentConnection = null;
-		});
+		device.addEventListener('gattserverdisconnected', () => this.onDisconnect());
 
 		return characteristic;
 	}
@@ -119,14 +146,31 @@ class Ble {
 		return await this._ble.getDevices();
 	}
 
-	async send(data: Array<number>) {
+	async send(data: Array<number> | ArrayBuffer) {
 		if (!this._internalConnection) {
 			throw new Error('Not connected!');
 		}
 
-		const dataBuffer = new Uint8Array(data);
+		const dataBuffer: ArrayBuffer = Array.isArray(data) ? new Uint8Array(data).buffer : data;
 
-		return this._internalConnection.characteristic.writeValue(dataBuffer);
+		// chain the writes into 512 byte chunks
+		const chunkSize = 512;
+		const chunks = Math.ceil(dataBuffer.byteLength / chunkSize);
+		let offset = 0;
+
+		for (let i = 0; i < chunks; i++) {
+			const chunk = dataBuffer.slice(offset, offset + chunkSize);
+			await this._internalConnection.characteristic.writeValue(chunk);
+			offset += chunkSize;
+		}
+	}
+
+	private onDisconnect() {
+		log.l('Disconnected from device', this._internalConnection?.device);
+		this._internalConnection?.device.removeEventListener('gattserverdisconnected', () =>
+			this.onDisconnect()
+		);
+		this.currentConnection = null;
 	}
 }
 

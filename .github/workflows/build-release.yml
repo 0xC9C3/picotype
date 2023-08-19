@@ -1,10 +1,19 @@
-name: If a new tag is pushed, build and release a new version
-run-name: Build and release a new version
-# create a new release if a new tag is pushed
+name: Build and release
+run-name: If a new tag is pushed, build and release a new version
 on:
-  push:
-    tags:
-      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build and release'
+        required: true
+        default: '0.0.0'
+  # disabled for now until https://github.com/orgs/community/discussions/39054
+  #push:
+  #  tags:
+  #    - '*.*.*'
+
+env:
+  CONTAINER_NAME: 0xc9c3/picotype
 
 jobs:
   build-pwa:
@@ -12,10 +21,12 @@ jobs:
     name: Build picotype PWA
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install dependencies
         working-directory: ./pwa
         run: yarn install --frozen-lockfile
+      - name: Copy readme to pwa/static/docs.md
+        run: cp README.md pwa/static/docs.md
       - name: Build
         working-directory: ./pwa
         run: yarn build
@@ -28,47 +39,117 @@ jobs:
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v2
         with:
-          artifact-name: pwa
           path: ./pwa/build
-          if-no-files-found: error
           retention-days: 1
+      - name: Build docker image
+        working-directory: ./pwa
+        run: |
+          docker build -t ${CONTAINER_NAME}:${GITHUB_SHA} \
+            -t ${CONTAINER_NAME}:latest \
+            -t ${CONTAINER_NAME}:${{ inputs.tag }} \
+            -f Dockerfile .
+      - name: Push docker image
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          docker push ${CONTAINER_NAME}:${GITHUB_SHA}
+          docker push ${CONTAINER_NAME}:latest
+          docker push ${CONTAINER_NAME}:${{ inputs.tag }}
+
+  deploy-pwa-to-pages:
+    name: Deploy PWA to GitHub Pages
+    needs: build-pwa
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
   build-firmware:
     runs-on: ubuntu-latest
-    name: Build firmware and upload firmware.u2f via cmake as artifact
+    name: Build firmware and upload firmware.uf2 via cmake as artifact
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
-      - name: Build
-        working-directory: ./firmware
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        working-directory: ./device
         run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_BUILD_TYPE=Release ..
-          make -j$(nproc)
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            gcc-arm-none-eabi \
+            libnewlib-arm-none-eabi \
+            libusb-1.0-0-dev \
+            libudev-dev \
+            ninja-build
+      - name: Build
+        working-directory: ./device
+        run: |
+          cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
+          cmake --build cmake-build --target firmware -j 30
       - name: Upload firmware artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: firmware
-          path: ./firmware/build/firmware.u2f
+          path: ./device/cmake-build/firmware.uf2
           if-no-files-found: error
           retention-days: 1
   create-release:
     runs-on: ubuntu-latest
     name: Create a new release
     needs: [ build-pwa, build-firmware ]
+    permissions: write-all
     steps:
-      - name: Create release
+      - uses: actions/download-artifact@v3
+        with:
+          name: firmware
+          path: ./artifact/firmware
+      - uses: actions/download-artifact@v3
+        with:
+          name: github-pages
+          path: ./artifact/pwa
+      - name: Create release and add artifacts
         uses: actions/github-script@v6
         with:
           script: |
-            const { data: release } = await github.repos.createRelease({
+            const input_tag = '${{ inputs.tag }}';
+            console.log('input_tag: ' + input_tag);
+            const tag = (input_tag || context.ref.replace('refs/tags/', ''));
+            
+            const { data: release } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: context.ref,
-              name: context.ref,
-              body: context.payload.head_commit.message,
+              tag_name: tag,
+              name: tag,
+              body: 'Release created by GitHub Actions',
               draft: false,
               prerelease: false,
             });
+            
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+              name: 'firmware.uf2',
+              data: require('fs').readFileSync('./artifact/firmware/firmware.uf2'),
+            });
+            
+            await github.rest.repos.uploadReleaseAsset({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release.id,
+              name: 'pwa.tar',
+              data: require('fs').readFileSync('./artifact/pwa/artifact.tar'),
+            });
+            
             core.setOutput('release_id', release.id);
 
