@@ -1,5 +1,5 @@
 #include "btstack.h"
-#include "../config/bluetooth.h"
+#include "../config/picotype_bluetooth.h"
 
 typedef struct {
     char name;
