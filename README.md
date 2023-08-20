@@ -8,7 +8,7 @@ The case is designed in tinkercad and the firmware is written in C using the pic
 
 @todo short gif of using picotype + bitwarden on phone
 
-For nice looking documentation, see the [docs here](@todo)
+For nice looking documentation, see the [docs here](picotype.stack.rip/docs.html)
 
 ## Table of Contents
 
@@ -60,7 +60,8 @@ For nice looking documentation, see the [docs here](@todo)
 **While not necessary, I strongly recommend hosting your own instance of the web app
 to avoid sending your keystrokes to a third party, in case the hosted version is compromised**
 
-**If you do not want to host your own instance, you can use the hosted version at @todo at your own risk**
+**If you do not want to host your own instance, you can use the hosted version at https://picotype.stack.rip at your own
+risk**
 
 **The following instructions are for hosting your own instance using cloudflare pages.**
 
@@ -97,13 +98,13 @@ Once the web app is bonded to the pico, it will automatically connect to it when
 - openocd
 - minicom or another serial terminal
 - (optional) configure i.e. chrome to allow bluetooth connections
-    - options can be found in chrome://flags for details see [this image](old_web/docs/img/chrome_ble_settings.png)
+    - options can be found in chrome://flags for details see [this image](pwa/static/img/chrome_ble_settings.png)
 
 ### Setup
 
 1. clone this repo including submodules
     ```bash
-    git clone @todo --recurse-submodules
+    git clone git@github.com:0xC9C3/picotype.git --recurse-submodules
     ```
 2. install the pico sdk
     ```bash

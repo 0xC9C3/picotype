@@ -122,7 +122,7 @@
                 <Spinner class="w-3 h-3 mr-2"/>
             {/if}
         </Button>
-        <Button class="w-full" size="sm">
+        <Button class="w-full" href="/docs.html" rel="external" size="sm">
             <Icon class="w-3 h-3 mr-2" name="book-solid"/>
             Documentation
         </Button>

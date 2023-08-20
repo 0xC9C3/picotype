@@ -6,8 +6,11 @@
     import Toast from "../components/Toast.svelte";
 </script>
 
-<div class="h-screen bg-teal-950 text-gray-100 flex justify-center items-center flex-col p-3">
+<svelte:head>
+    <title>picotype</title>
+</svelte:head>
 
+<div class="h-screen bg-teal-950 text-gray-100 flex justify-center items-center flex-col p-3">
     <div class="w-full mb-3">
         <Title/>
     </div>

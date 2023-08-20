@@ -22,6 +22,8 @@ jobs:
       - name: Install dependencies
         working-directory: ./pwa
         run: yarn install --frozen-lockfile
+      - name: Copy readme to pwa/static/docs.md
+        run: cp README.md pwa/static/docs.md
       - name: Build
         working-directory: ./pwa
         run: yarn build
