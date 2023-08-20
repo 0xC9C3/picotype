@@ -4,11 +4,12 @@ A Raspberry Pi Pico W based keyboard with a 3D printed case.
 
 Type from your phone using bluetooth.
 
-The case is designed in tinkercad and the firmware is written in C using the pico sdk.
+The case is designed in tinkercad and the firmware is written in C using the pico sdk, the pwa is created using
+SvelteKit + TypeScript + FlowbiteSvelte & tailwindcss.
 
 @todo short gif of using picotype + bitwarden on phone
 
-For nice looking documentation, see the [docs here](picotype.stack.rip/docs.html)
+For nice looking documentation, see the [docs here](https://picotype.stack.rip/docs.html)
 
 ## Table of Contents
 
@@ -36,7 +37,7 @@ For nice looking documentation, see the [docs here](picotype.stack.rip/docs.html
 
 - a Raspberry Pi Pico W (no headers required)
 
-1. Download the latest release from the [releases page](https://github.com/0xC9C3/picotype/releases)
+1. Download the latest firmware.uf2 release from the [releases page](https://github.com/0xC9C3/picotype/releases)
 2. Connect the pico to your computer while holding the BOOTSEL button
 3. Copy the firmware.uf2 file to the RPI-RP2 drive that appears
 4. The pico will reboot and the firmware will be loaded
@@ -58,10 +59,10 @@ For nice looking documentation, see the [docs here](picotype.stack.rip/docs.html
 ### Web App
 
 **While not necessary, I strongly recommend hosting your own instance of the web app
-to avoid sending your keystrokes to a third party, in case the hosted version is compromised**
+to avoid sending your keystrokes to a third party, in case the hosted version is compromised.**
 
 **If you do not want to host your own instance, you can use the hosted version at https://picotype.stack.rip at your own
-risk**
+risk.**
 
 **The following instructions are for hosting your own instance using cloudflare pages.**
 
@@ -83,7 +84,11 @@ risk**
 1. Plug the pico into your computer
 2. Connect to the pico using the web app, preferably using a phone, alternatively using a computer
    Tip: If you are using a phone, you can add the web app to your home screen for a more native experience
-3. Type away!
+3. When asked, pair with the pico and when the LED is solid green, press the button on the pico once to accept the
+   pairing request
+4. Type away!
+5. To reset the bonded device, press and hold the button on the pico for 5 seconds until the LED starts flashing
+   green
 
 Once the web app is bonded to the pico, it will automatically connect to it when it is plugged in.
 

@@ -47,17 +47,12 @@ static char button_released[18] = "released";
 static int toggle = true;
 
 
-
-
 /*
  * @section Track throughput
  * @text We calculate the throughput by setting a start time and measuring the amount of
  * data sent. After a configurable REPORT_INTERVAL_MS, we print the throughput in kB/s
  * and reset the counter and start time.
  */
-
-/* LISTING_START(tracking): Tracking throughput */
-
 static void test_reset(picotype_le_streamer_connection_t *context) {
     context->test_data_start = btstack_run_loop_get_time_ms();
     context->test_data_sent = 0;
@@ -77,12 +72,6 @@ static void test_track_sent(picotype_le_streamer_connection_t *context, int byte
     context->test_data_start = now;
     context->test_data_sent = 0;
 }
-/* LISTING_END(tracking): Tracking throughput */
-
-
-
-
-/* LISTING_END */
 
 
 int service_server_send(hci_con_handle_t con_handle, const uint8_t *data, uint16_t size) {
@@ -101,8 +90,6 @@ void service_server_request_can_send_now(btstack_context_callback_registration_t
  * @text The streamer function checks if notifications are enabled and if a notification can be sent now.
  * It creates some test data - a single letter that gets increased every time - and tracks the data sent.
  */
-
-/* LISTING_START(streamer): Streaming code */
 static void can_send(void *some_context) {
     UNUSED(some_context);
 
@@ -152,8 +139,6 @@ static void can_send(void *some_context) {
     next_connection_index();
 }
 
-/* LISTING_END */
-
 void typing_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size) {
     hci_con_handle_t con_handle;
     picotype_le_streamer_connection_t *context;
@@ -163,6 +148,7 @@ void typing_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
             switch (hci_event_gattservice_meta_get_subevent_code(packet)) {
                 case GATTSERVICE_SUBEVENT_SPP_SERVICE_CONNECTED:
                     con_handle = gattservice_subevent_spp_service_connected_get_con_handle(packet);
+                    // get authentication level
                     context = connection_for_conn_handle(con_handle);
                     if (!context) break;
                     context->le_notification_enabled = 1;
@@ -266,6 +252,7 @@ void typing_service_server_init(btstack_packet_handler_t packet_handler) {
     // get service handle range
     uint16_t start_handle = 0;
     uint16_t end_handle = 0xffff;
+
     int service_found = gatt_server_get_handle_range_for_service_with_uuid128(
             primary_service_uuid,
             &start_handle,
@@ -273,7 +260,6 @@ void typing_service_server_init(btstack_packet_handler_t packet_handler) {
     );
     btstack_assert(service_found != 0);
     UNUSED(service_found);
-
     // get characteristic value handle and client configuration handle
     picotype_rx_value_handle = gatt_server_get_value_handle_for_characteristic_with_uuid128(
             start_handle,
@@ -285,6 +271,7 @@ void typing_service_server_init(btstack_packet_handler_t packet_handler) {
             end_handle,
             tx_type_characteristic_uuid
     );
+
     picotype_tx_client_configuration_handle = gatt_server_get_client_configuration_handle_for_characteristic_with_uuid128(
             start_handle,
             end_handle,

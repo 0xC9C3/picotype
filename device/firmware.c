@@ -33,9 +33,12 @@ int main() {
 
     printf("Begin\n");
 
-    usb_loop();
+    while (1) {
+        usb_step();
+        bluetooth_step();
+    }
 
-    btstack_run_loop_execute();
+    //btstack_run_loop_execute();
 
     return 0;
 }

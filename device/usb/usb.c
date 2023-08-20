@@ -156,12 +156,10 @@ void usb_init() {
     tusb_init();
 }
 
-__attribute__((noreturn)) void usb_loop() {
-    while (1) {
-        // tinyusb host task
-        tud_task();
+void usb_step() {
+    // tinyusb host task
+    tud_task();
 
-        // application task
-        hid_task();
-    }
+    // application task
+    hid_task();
 }
