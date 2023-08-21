@@ -80,7 +80,7 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S . -B cmake-build
           cmake --build cmake-build --target firmware -j 30
       - name: Upload firmware artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: firmware
           path: ./device/cmake-build/firmware.uf2
