@@ -100,6 +100,7 @@ Once the web app is bonded to the pico, it will automatically connect to it when
 
 - Raspberry Pi Debug Probe
 - Pico Zero W with headers
+- breadboard
 - openocd
 - minicom or another serial terminal
 - (optional) configure i.e. chrome to allow bluetooth connections
