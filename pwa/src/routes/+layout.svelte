@@ -10,13 +10,13 @@
     <title>picotype</title>
 </svelte:head>
 
-<div class="h-screen bg-teal-950 text-gray-100 flex justify-center items-center flex-col p-3">
+<div class="h-screen bg-secondary-950 text-gray-100 flex justify-center items-center flex-col p-3">
     <div class="w-full mb-3">
         <Title/>
     </div>
 
     <div class="flex w-full flex-grow">
-        <div class="col-span-10 bg-teal-900 rounded p-3 flex-grow">
+        <div class="col-span-10 bg-secondary-900 rounded p-3 flex-grow">
             {#if ble.isSupported}
                 <slot/>
             {:else}

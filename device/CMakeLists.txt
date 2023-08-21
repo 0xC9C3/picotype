@@ -65,13 +65,42 @@ target_include_directories(
 # find sdk/lib/btstack/src -type f -exec sed -i 's/hid_report_type_t/hid_report_type_btstack_t/g' {} \;
 # @see https://github.com/raspberrypi/pico-sdk/issues/1449
 
+set(replace_1 "find ${CMAKE_CURRENT_LIST_DIR}/sdk/lib/btstack/src -type f -exec sed -i 's/HID_REPORT_TYPE_INPUT/HID_REPORT_TYPE_INPUT_BTSTACK/g' {} \;")
+set(replace_2 "find ${CMAKE_CURRENT_LIST_DIR}/sdk/lib/btstack/src -type f -exec sed -i 's/HID_REPORT_TYPE_OUTPUT/HID_REPORT_TYPE_OUTPUT_BTSTACK/g' {} \;")
+set(replace_3 "find ${CMAKE_CURRENT_LIST_DIR}/sdk/lib/btstack/src -type f -exec sed -i 's/HID_REPORT_TYPE_FEATURE/HID_REPORT_TYPE_FEATURE_BTSTACK/g' {} \;")
+set(replace_4 "find ${CMAKE_CURRENT_LIST_DIR}/sdk/lib/btstack/src -type f -exec sed -i 's/hid_report_type_t/hid_report_type_btstack_t/g' {} \;")
+
 message(STATUS "Renaming HID_REPORT_TYPE_* and hid_report_type_t in btstack")
+
 execute_process(
-        COMMAND "find ${CMAKE_CURRENT_LIST_DIR}/sdk/lib/btstack/src -type f -exec sed -i 's/HID_REPORT_TYPE_INPUT/HID_REPORT_TYPE_INPUT_BTSTACK/g' {} \;"
-        COMMAND "find ${CMAKE_CURRENT_LIST_DIR}/sdk/lib/btstack/src -type f -exec sed -i 's/HID_REPORT_TYPE_OUTPUT/HID_REPORT_TYPE_OUTPUT_BTSTACK/g' {} \;"
-        COMMAND "find ${CMAKE_CURRENT_LIST_DIR}/sdk/lib/btstack/src -type f -exec sed -i 's/HID_REPORT_TYPE_FEATURE/HID_REPORT_TYPE_FEATURE_BTSTACK/g' {} \;"
-        COMMAND "find ${CMAKE_CURRENT_LIST_DIR}/sdk/lib/btstack/src -type f -exec sed -i 's/hid_report_type_t/hid_report_type_btstack_t/g' {} \;"
+        COMMAND "/bin/bash" "-c" "${replace_1}"
+        COMMAND_ECHO STDOUT
 )
+message(STATUS "out: ${out}")
+message(STATUS "res: ${res}")
+
+execute_process(
+        COMMAND "/bin/bash" "-c" "${replace_2}"
+        COMMAND_ECHO STDOUT
+)
+message(STATUS "out: ${out}")
+message(STATUS "res: ${res}")
+
+execute_process(
+        COMMAND "/bin/bash" "-c" "${replace_3}"
+        COMMAND_ECHO STDOUT
+)
+message(STATUS "out: ${out}")
+message(STATUS "res: ${res}")
+
+execute_process(
+        COMMAND "/bin/bash" "-c" "${replace_4}"
+        COMMAND_ECHO STDOUT
+)
+message(STATUS "out: ${out}")
+message(STATUS "res: ${res}")
+
+message(STATUS "Renaming HID_REPORT_TYPE_* and hid_report_type_t in btstack done")
 
 target_link_libraries(
         firmware
