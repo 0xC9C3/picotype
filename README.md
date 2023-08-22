@@ -1,6 +1,8 @@
 # picotype
 
-![](logo/logo.png | width=100)
+<p align="center">
+    <img src="logo/logo.png" width="200">
+</p>
 
 A Raspberry Pi Pico W based keyboard with a 3D printed case.
 
