@@ -48,6 +48,12 @@ jobs:
             -t ${CONTAINER_NAME}:latest \
             -t ${CONTAINER_NAME}:${{ inputs.tag }} \
             -f Dockerfile .
+      - name: Push docker image
+        run: |
+          echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          docker push ${CONTAINER_NAME}:${GITHUB_SHA}
+          docker push ${CONTAINER_NAME}:latest
+          docker push ${CONTAINER_NAME}:${{ inputs.tag }}
 
   deploy-pwa-to-pages:
     name: Deploy PWA to GitHub Pages
