@@ -1,11 +1,13 @@
 # picotype
 
+![](logo/logo.png | width=100)
+
 A Raspberry Pi Pico W based keyboard with a 3D printed case.
 
 Type from your phone using bluetooth.
 
 The case is designed in tinkercad and the firmware is written in C using the pico sdk, the pwa is created using
-SvelteKit + TypeScript + FlowbiteSvelte & tailwindcss.
+SvelteKit + TypeScript + Flowbite Svelte & tailwindcss.
 
 @todo short gif of using picotype + bitwarden on phone
 
@@ -67,7 +69,7 @@ risk.**
 
 **The following instructions are for hosting your own instance using cloudflare pages.**
 
-**Alternatively a docker image is also available [here](@todo).**
+**Alternatively a docker image is also available [here](https://hub.docker.com/r/0xc9c3/picotype).**
 
 **If you just want to drop the pwa somewhere in a web server you can also download the built version
 from the [releases page](https://github.com/0xC9C3/picotype/releases) and untar it or build it yourself.**
@@ -183,9 +185,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Alternatively, see [WTFPL](http://www.wtfpl.net/) if you don't care about licensing.
 
-Please also check the licenses of the dependencies used in this project.
+Please also check the licenses of the dependencies used in this project. (This list is not complete!)
 
 - [pico-sdk](https://github.com/raspberrypi/pico-sdk)
 - [tinyusb](https://github.com/hathach/tinyusb)
 - [btstack](https://github.com/bluekitchen/btstack)
+- [Flowbite Svelte](https://flowbite-svelte.com/)
 
+## saying thanks
+
+If you want to say thanks or want to support the project the best way is by contributing.
+
+If you still want to say thanks, I would be happy if you donated to any charity of your liking, because this
+is [Careware](https://en.wikipedia.org/wiki/Careware) and not meant as a product or an income stream for me.
