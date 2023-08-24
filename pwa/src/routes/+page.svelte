@@ -2,6 +2,7 @@
     import TextInput from "../components/TextInput.svelte";
     import {Button, Spinner} from "flowbite-svelte";
     import {ble} from "$lib/ble";
+    import TypeContentPacket from "$lib/packet/client/type_content";
 
     let isConnected = false;
     ble.currentConnection.subscribe(value => {
@@ -12,7 +13,12 @@
     let isSending = false;
     const send = () => {
         isSending = true;
-        ble.send([0x01, 0x02, 0x03, 0x02, 0x01])
+        const packet = new TypeContentPacket(
+            "Hello World!"
+        ).toBuffer();
+        ble.send(
+            packet
+        )
             .finally(() => isSending = false);
     }
 </script>

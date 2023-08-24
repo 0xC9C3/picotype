@@ -11,14 +11,8 @@
 #include "../hardware/hardware.h"
 #include "bsp/board.h"
 #include "pico/cyw43_arch.h"
+#include "packet/packet.h"
 
-
-#define BUTTON   15
-#define BLUE_LED 16
-#define REPORT_INTERVAL_MS 3000
-
-#define BUTTON_BOOTSEL
-#define BUTTON_STATE_ACTIVE   0
 
 const uint8_t adv_data[] = {
         2, BLUETOOTH_DATA_TYPE_FLAGS, 0x06,
@@ -109,7 +103,6 @@ static void att_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *p
             // setup new
             context = connection_for_conn_handle(HCI_CON_HANDLE_INVALID);
             if (!context) break;
-            context->test_data_len = ATT_DEFAULT_MTU - 4;
             context->connection_handle = att_event_connected_get_handle(packet);
 
             // print connection parameters (without using float operations)
@@ -135,8 +128,6 @@ static void att_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *p
             mtu = att_event_mtu_exchange_complete_get_MTU(packet) - 3;
             context = connection_for_conn_handle(att_event_mtu_exchange_complete_get_handle(packet));
             if (!context) break;
-            context->test_data_len = btstack_min(mtu - 3, sizeof(context->test_data));
-            printf("%c: ATT MTU = %u => use test data of len %u\n", context->name, mtu, context->test_data_len);
             break;
         case ATT_EVENT_DISCONNECTED:
             context = connection_for_conn_handle(att_event_disconnected_get_handle(packet));
@@ -251,7 +242,6 @@ void bluetooth_init() {
     // set capability button
     sm_set_io_capabilities(IO_CAPABILITY_DISPLAY_YES_NO);
 
-
     att_server_init(profile_data, NULL, NULL);
 
     // init services
@@ -259,7 +249,6 @@ void bluetooth_init() {
 
     sm_event_callback_registration.callback = &sm_event_handler;
     sm_add_event_handler(&sm_event_callback_registration);
-
 
     att_server_register_packet_handler(att_packet_handler);
 

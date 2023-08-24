@@ -5,10 +5,6 @@ typedef struct {
     char name;
     int le_notification_enabled;
     hci_con_handle_t connection_handle;
-    char test_data[200];
-    int test_data_len;
-    uint32_t test_data_sent;
-    uint32_t test_data_start;
     btstack_context_callback_registration_t send_request;
 } picotype_le_streamer_connection_t;
 

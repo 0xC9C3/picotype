@@ -22,7 +22,9 @@ target_sources(
         PUBLIC
         # bluetooth
         ${CMAKE_CURRENT_LIST_DIR}/bluetooth/service/base_service.c
+        ${CMAKE_CURRENT_LIST_DIR}/bluetooth/service/typing/packet/base.c
         ${CMAKE_CURRENT_LIST_DIR}/bluetooth/service/typing/service.c
+        ${CMAKE_CURRENT_LIST_DIR}/bluetooth/packet/packet.c
         ${CMAKE_CURRENT_LIST_DIR}/bluetooth/connection.c
         ${CMAKE_CURRENT_LIST_DIR}/bluetooth/bluetooth.c
 

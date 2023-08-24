@@ -119,12 +119,12 @@ class Ble {
 		return await this._ble.getDevices();
 	}
 
-	async send(data: Array<number>) {
+	async send(data: Array<number> | ArrayBuffer) {
 		if (!this._internalConnection) {
 			throw new Error('Not connected!');
 		}
 
-		const dataBuffer = new Uint8Array(data);
+		const dataBuffer: ArrayBuffer = Array.isArray(data) ? new Uint8Array(data).buffer : data;
 
 		return this._internalConnection.characteristic.writeValue(dataBuffer);
 	}
