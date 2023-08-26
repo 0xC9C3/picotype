@@ -61,8 +61,8 @@ static void hci_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *p
                            hci_subevent_le_connection_complete_get_conn_latency(packet));
 
                     // request min con interval 15 ms for iOS 11+
-                    printf("LE Connection - Request 15 ms connection interval\n");
-                    gap_request_connection_parameter_update(con_handle, 12, 12, 0, 0x0048);
+                    /*printf("LE Connection - Request 15 ms connection interval\n");
+                    gap_request_connection_parameter_update(con_handle, 12, 12, 0, 0x0048);*/
                     break;
                 case HCI_SUBEVENT_LE_CONNECTION_UPDATE_COMPLETE:
                     // print connection parameters (without using float operations)
@@ -119,7 +119,7 @@ static void att_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *p
             );
 
             // disable advertisements
-            gap_advertisements_enable(0);
+            //gap_advertisements_enable(0);
 
             // request pairing
             sm_send_security_request(context->connection_handle);
@@ -131,8 +131,8 @@ static void att_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *p
             break;
         case ATT_EVENT_DISCONNECTED:
             // begin advertising again
-            gap_advertisements_enable(1);
-
+            printf("LE Connection disconnected\n");
+            //gap_advertisements_enable(1);
             context = connection_for_conn_handle(att_event_disconnected_get_handle(packet));
             if (!context) break;
             // free connection
@@ -147,6 +147,9 @@ static void att_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *p
 }
 
 static void sm_event_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size) {
+    bd_addr_t addr;
+    bd_addr_type_t addr_type;
+
     switch (packet_type) {
 
         case HCI_EVENT_PACKET:
@@ -176,14 +179,58 @@ static void sm_event_handler(uint8_t packet_type, uint16_t channel, uint8_t *pac
                     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, false);
                     break;
                 case SM_EVENT_PAIRING_COMPLETE:
-                    // print bonding information
-                    printf("Pairing Complete, status %02x\n", sm_event_pairing_complete_get_status(packet));
+                    switch (sm_event_pairing_complete_get_status(packet)) {
+                        case ERROR_CODE_SUCCESS:
+                            printf("Pairing complete, success\n");
+                            break;
+                        case ERROR_CODE_CONNECTION_TIMEOUT:
+                            printf("Pairing failed, timeout\n");
+                            break;
+                        case ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION:
+                            printf("Pairing failed, disconnected\n");
+                            break;
+                        case ERROR_CODE_AUTHENTICATION_FAILURE:
+                            printf("Pairing failed, authentication failure with reason = %u\n",
+                                   sm_event_pairing_complete_get_reason(packet));
+                            break;
+                        default:
+                            break;
+                    }
                     break;
-
+                case SM_EVENT_REENCRYPTION_STARTED:
+                    sm_event_reencryption_complete_get_address(packet, addr);
+                    printf("Bonding information exists for addr type %u, identity addr %s -> start re-encryption\n",
+                           sm_event_reencryption_started_get_addr_type(packet), bd_addr_to_str(addr));
+                    break;
+                case SM_EVENT_REENCRYPTION_COMPLETE:
+                    switch (sm_event_reencryption_complete_get_status(packet)) {
+                        case ERROR_CODE_SUCCESS:
+                            printf("Re-encryption complete, success\n");
+                            break;
+                        case ERROR_CODE_CONNECTION_TIMEOUT:
+                            printf("Re-encryption failed, timeout\n");
+                            break;
+                        case ERROR_CODE_REMOTE_USER_TERMINATED_CONNECTION:
+                            printf("Re-encryption failed, disconnected\n");
+                            break;
+                        case ERROR_CODE_PIN_OR_KEY_MISSING:
+                            printf("Re-encryption failed, bonding information missing\n\n");
+                            printf("Assuming remote lost bonding information\n");
+                            printf("Deleting local bonding information and start new pairing...\n");
+                            sm_event_reencryption_complete_get_address(packet, addr);
+                            addr_type = sm_event_reencryption_started_get_addr_type(packet);
+                            gap_delete_bonding(addr_type, addr);
+                            sm_request_pairing(sm_event_reencryption_complete_get_handle(packet));
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
                 default:
                     printf("sm_event_handler: event not handled %02x\n", hci_event_packet_get_type(packet));
                     break;
             }
+            break;
 
         default:
             printf("sm_event_handler: packet_type %02x, event %02x\n", packet_type, hci_event_packet_get_type(packet));
@@ -223,7 +270,7 @@ void bluetooth_step() {
         }
 
         // begin advertising again
-        gap_advertisements_enable(1);
+        //gap_advertisements_enable(1);
     }
 }
 

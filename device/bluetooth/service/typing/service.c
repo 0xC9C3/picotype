@@ -50,6 +50,7 @@ void service_server_request_can_send_now(btstack_context_callback_registration_t
 void typing_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packet, uint16_t size) {
     hci_con_handle_t con_handle;
     picotype_le_streamer_connection_t *context;
+
     switch (packet_type) {
         case HCI_EVENT_PACKET:
             if (hci_event_packet_get_type(packet) != HCI_EVENT_GATTSERVICE_META) break;
@@ -60,8 +61,8 @@ void typing_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *packe
                     context = connection_for_conn_handle(con_handle);
                     if (!context) break;
                     context->le_notification_enabled = 1;
-                    service_server_request_can_send_now(&context->send_request,
-                                                        context->connection_handle);
+                    //service_server_request_can_send_now(&context->send_request,
+                    //                                    context->connection_handle);
                     break;
                 case GATTSERVICE_SUBEVENT_SPP_SERVICE_DISCONNECTED:
                     con_handle = HCI_CON_HANDLE_INVALID;

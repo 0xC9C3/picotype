@@ -40,6 +40,7 @@ void process_picotype_packet_data(uint8_t *data, uint16_t size) {
             (*cb)(current_packet.type, current_packet.size, current_packet.data);
         }
 
+        free(current_packet.data);
         current_packet.data = NULL;
         current_packet.cursor = 0;
         current_packet.size = 0;
