@@ -1,23 +1,23 @@
 class Packet {
 	// byte type
 	public type: number;
-	public length: number;
-
 	public body: ArrayBuffer | null = null;
 
-	constructor(type: number, length = 0, body: ArrayBuffer | null = null) {
+	constructor(type: number, body: ArrayBuffer | null = null) {
 		this.type = type;
-		this.length = length;
 		this.body = body;
+	}
+
+	public get length(): number {
+		return this.body?.byteLength || 0;
 	}
 
 	public static fromBuffer(buffer: ArrayBuffer): Packet {
 		const dataView = new DataView(buffer);
 		const type = dataView.getUint8(0);
-		const length = dataView.getUint16(1);
 		const body = buffer.slice(3);
 
-		return new Packet(type, length, body);
+		return new Packet(type, body);
 	}
 
 	public toBuffer(): ArrayBuffer {

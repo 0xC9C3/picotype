@@ -12,6 +12,7 @@
 #include "../../connection.h"
 #include "../../../hardware/hardware.h"
 #include "../../packet/packet.h"
+#include "packet/base.h"
 
 
 const uint8_t primary_service_uuid[] = {
@@ -137,10 +138,6 @@ service_write_callback(hci_con_handle_t con_handle, uint16_t attribute_handle, u
     return 0;
 }
 
-static void internal_picotype_packet_handler(uint8_t packet_type, uint16_t size, uint8_t *packet) {
-    printf("picotype_packet_handler: packet_type %02x, size %02x\n", packet_type, size);
-}
-
 void typing_service_server_init(btstack_packet_handler_t packet_handler) {
     client_packet_handler = packet_handler;
 
@@ -178,7 +175,7 @@ void typing_service_server_init(btstack_packet_handler_t packet_handler) {
     printf("picotype_tx_client_configuration_handle \t0x%02x \n", picotype_tx_client_configuration_handle);
 
 
-    picotype_packet_handler_callback = &internal_picotype_packet_handler;
+    srv_typing_register_packet_handler();
 
     // register service with ATT Server
     picotype_service_handler.start_handle = start_handle;

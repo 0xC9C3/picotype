@@ -6,7 +6,7 @@ class TypeContentPacket extends Packet {
 	public content: string;
 
 	constructor(content: string) {
-		super(TypeContentPacket.TYPE, content.length);
+		super(TypeContentPacket.TYPE);
 		this.content = content;
 	}
 

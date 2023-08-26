@@ -126,7 +126,16 @@ class Ble {
 
 		const dataBuffer: ArrayBuffer = Array.isArray(data) ? new Uint8Array(data).buffer : data;
 
-		return this._internalConnection.characteristic.writeValue(dataBuffer);
+		// chain the writes into 512 byte chunks
+		const chunkSize = 512;
+		const chunks = Math.ceil(dataBuffer.byteLength / chunkSize);
+		let offset = 0;
+
+		for (let i = 0; i < chunks; i++) {
+			const chunk = dataBuffer.slice(offset, offset + chunkSize);
+			await this._internalConnection.characteristic.writeValue(chunk);
+			offset += chunkSize;
+		}
 	}
 }
 

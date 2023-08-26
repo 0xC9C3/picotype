@@ -1,6 +1,5 @@
 <script>
-    import TextInput from "../components/TextInput.svelte";
-    import {Button, Spinner} from "flowbite-svelte";
+    import {Button, Input, Spinner} from "flowbite-svelte";
     import {ble} from "$lib/ble";
     import TypeContentPacket from "$lib/packet/client/type_content";
 
@@ -9,12 +8,13 @@
         isConnected = value?.device?.gatt?.connected ?? false;
     });
 
+    let text = "";
 
     let isSending = false;
     const send = () => {
         isSending = true;
         const packet = new TypeContentPacket(
-            "Hello World!"
+            text
         ).toBuffer();
         ble.send(
             packet
@@ -25,8 +25,9 @@
 
 <div class="flex flex-col h-full">
 
-
-    <TextInput/>
+    <form on:submit|preventDefault={() => send()}>
+        <Input bind:value={text} label="Name" on:submit={() => send()} placeholder="Enter something"/>
+    </form>
 
     <div class="flex-grow"/>
 

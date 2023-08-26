@@ -8,6 +8,7 @@
 
 <svelte:head>
     <title>picotype</title>
+    <meta content="#1f2937" name="theme-color"/>
 </svelte:head>
 
 <div class="h-screen bg-secondary-950 text-gray-100 flex justify-center items-center flex-col p-3">

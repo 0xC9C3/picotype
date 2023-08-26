@@ -130,15 +130,15 @@ static void att_packet_handler(uint8_t packet_type, uint16_t channel, uint8_t *p
             if (!context) break;
             break;
         case ATT_EVENT_DISCONNECTED:
+            // begin advertising again
+            gap_advertisements_enable(1);
+
             context = connection_for_conn_handle(att_event_disconnected_get_handle(packet));
             if (!context) break;
             // free connection
             printf("%c: Disconnect\n", context->name);
             context->le_notification_enabled = 0;
             context->connection_handle = HCI_CON_HANDLE_INVALID;
-
-            // begin advertising again
-            gap_advertisements_enable(1);
             break;
         default:
             printf("att_packet_handler: event not handled %02x\n", hci_event_packet_get_type(packet));
@@ -221,6 +221,9 @@ void bluetooth_step() {
             cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, false);
             sleep_ms(100);
         }
+
+        // begin advertising again
+        gap_advertisements_enable(1);
     }
 }
 
