@@ -1,6 +1,6 @@
 <script lang="ts">
     import {Button} from "flowbite-svelte";
-    import {ble} from "$lib/ble.ts";
+    import {ble} from "$lib/ble";
     import {log} from "$lib/log";
     import store from "$lib/store";
     import ConnectionState from "./ConnectionState.svelte";

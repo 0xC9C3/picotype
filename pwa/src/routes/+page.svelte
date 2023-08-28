@@ -47,32 +47,58 @@
 
         isSending = false;
     }
+
+    const addDevice = () => {
+        store.loading.set(true);
+        ble.addDevice()
+            .then(() => {
+                log.l("Device added");
+            })
+            .catch(error => {
+                log.l(error);
+                store.toast.set({
+                    message: error.message,
+                    type: "error"
+                });
+            })
+            .finally(() => {
+                store.loading.set(false);
+            });
+    }
 </script>
 
 <div class="flex flex-col h-full">
 
-    <form on:submit|preventDefault={() => send()}>
-        <div class="mb-2">
-            <Label class="mb-2" for="username">Username / E-Mail</Label>
-            <Input autocomplete="username" autocorrect="off" bind:value={username} id="username"
-                   placeholder="Username / E-Mail"
-                   type="text"/>
-        </div>
-        <div>
-            <Label class="mb-2" for="password">Password</Label>
-            <Input autocomplete="password" autocorrect="off" autofocus="autofocus" bind:value={password} id="password"
-                   placeholder="•••••••••"
-                   type="password"/>
-        </div>
-    </form>
+    {#if isConnected}
+        <form on:submit|preventDefault={() => send()}>
+            <div class="mb-2">
+                <Label class="mb-2" for="username">Username / E-Mail</Label>
+                <Input autocomplete="username" autocorrect="off" bind:value={username} id="username"
+                       placeholder="Username / E-Mail"
+                       type="text"/>
+            </div>
+            <div>
+                <Label class="mb-2" for="password">Password</Label>
+                <Input autocomplete="password" autocorrect="off" autofocus="autofocus" bind:value={password}
+                       id="password"
+                       placeholder="•••••••••"
+                       type="password"/>
+            </div>
+        </form>
 
-    <div class="flex-grow"/>
+        <div class="flex-grow"/>
 
-    <Button color="primary" disabled={!isConnected || isSending} on:click={() => send()}>
-        {#if (isSending)}
-            <Spinner/>
-        {:else}
-            Send
-        {/if}
-    </Button>
+        <Button color="primary" disabled={!isConnected || isSending} on:click={() => send()}>
+            {#if (isSending)}
+                <Spinner/>
+            {:else}
+                Send
+            {/if}
+        </Button>
+    {:else}
+        <div class="flex-grow"/>
+        <Button color="primary" on:click={() => addDevice()}>
+            Connect
+        </Button>
+    {/if}
 </div>
