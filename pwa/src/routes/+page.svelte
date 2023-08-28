@@ -1,9 +1,10 @@
 <script>
-    import {Button, Input, Label, Spinner} from "flowbite-svelte";
+    import {Button, ButtonGroup, Input, Label, Spinner} from "flowbite-svelte";
     import {ble} from "$lib/ble";
     import TypeContentPacket from "$lib/packet/client/type_content";
     import store from "$lib/store";
     import {log} from "$lib/log";
+    import {Icon} from "flowbite-svelte-icons";
 
     let isConnected = false;
     ble.currentConnection.subscribe(value => {
@@ -16,8 +17,20 @@
     let isSending = false;
 
     const sendText = async (text) => {
-        const packet = new TypeContentPacket(text).toBuffer();
-        await ble.send(packet);
+        if (text.length === 0) {
+            return;
+        }
+        try {
+            const packet = new TypeContentPacket(text).toBuffer();
+            await ble.send(packet);
+        } catch (e) {
+            store.toast.set({
+                message: e.message,
+                type: "error"
+            });
+
+            log.e(e);
+        }
     }
 
     const send = async () => {
@@ -28,21 +41,9 @@
             password,
         ];
         for (const text of textsToType) {
-            try {
-                if (text.length === 0) {
-                    continue;
-                }
+            await sendText(text);
 
-                await sendText(text);
-            } catch (e) {
-                store.toast.set({
-                    message: e.message,
-                    type: "error"
-                });
-
-                log.e(e);
-                break;
-            }
+            // @todo send tab between strokes
         }
 
         isSending = false;
@@ -70,21 +71,33 @@
 <div class="flex flex-col h-full">
 
     {#if isConnected}
-        <form on:submit|preventDefault={() => send()}>
-            <div class="mb-2">
-                <Label class="mb-2" for="username">Username / E-Mail</Label>
-                <Input autocomplete="username" autocorrect="off" bind:value={username} id="username"
-                       placeholder="Username / E-Mail"
-                       type="text"/>
-            </div>
-            <div>
-                <Label class="mb-2" for="password">Password</Label>
-                <Input autocomplete="password" autocorrect="off" autofocus="autofocus" bind:value={password}
-                       id="password"
-                       placeholder="•••••••••"
-                       type="password"/>
-            </div>
-        </form>
+        <div class="h-full flex flex-col justify-center">
+            <form on:submit|preventDefault={() => send()}>
+                <div class="mb-3">
+                    <Label class="mb-2" for="username">Username / E-Mail</Label>
+                    <ButtonGroup class="w-full">
+                        <Input autocomplete="username" autocorrect="off" bind:value={username} id="username"
+                               placeholder="Username / E-Mail"
+                               type="text"/>
+                        <Button on:click={() => sendText(username)} color="primary">
+                            <Icon name="arrow-right-outline"/>
+                        </Button>
+                    </ButtonGroup>
+                </div>
+                <div>
+                    <Label class="mb-2" for="password">Password</Label>
+                    <ButtonGroup class="w-full">
+                        <Input autocomplete="password" autocorrect="off" autofocus="autofocus" bind:value={password}
+                               id="password"
+                               placeholder="•••••••••"
+                               type="password"/>
+                        <Button on:click={() => sendText(password)} color="primary">
+                            <Icon name="arrow-right-outline"/>
+                        </Button>
+                    </ButtonGroup>
+                </div>
+            </form>
+        </div>
 
         <div class="flex-grow"/>
 
@@ -92,7 +105,7 @@
             {#if (isSending)}
                 <Spinner/>
             {:else}
-                Send
+                Send all
             {/if}
         </Button>
     {:else}
