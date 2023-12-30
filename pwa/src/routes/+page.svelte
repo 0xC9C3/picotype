@@ -99,7 +99,7 @@
 
 <div class="flex flex-col h-full">
 
-    {#if isConnected || true}
+    {#if isConnected}
         <form class="h-full flex flex-col" method="POST" on:submit|preventDefault={() => send()}>
             <div class="h-full flex flex-col justify-center">
                 <div class="mb-3">
@@ -131,10 +131,11 @@
 
             <div class="flex-grow"/>
 
-            <Button class="mb-3" color="alternative" disabled={!isConnected || isSending} on:click={() => sendClipboard()}>
+            <Button class="mb-3" color="purple" disabled={!isConnected || isSending} on:click={() => sendClipboard()}>
                 {#if (isSending)}
                     <Spinner/>
                 {:else}
+                    <Icon name="clipboard-outline" class="mr-2"/>
                     Send clipboard
                 {/if}
             </Button>
@@ -143,6 +144,7 @@
                 {#if (isSending)}
                     <Spinner/>
                 {:else}
+                    <Icon name="play-outline" class="mr-2"/>
                     Send all
                 {/if}
             </Button>
