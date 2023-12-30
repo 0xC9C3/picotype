@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
     import {Button, ButtonGroup, Input, Label, Spinner} from "flowbite-svelte";
     import {ble} from "$lib/ble";
     import TypeContentPacket from "$lib/packet/client/type_content";
@@ -16,7 +16,30 @@
 
     let isSending = false;
 
-    const sendText = async (text) => {
+    const sendClipboard = async () => {
+        if (!navigator.clipboard) {
+            store.toast.set({
+                message: "Clipboard not supported",
+                type: "error"
+            });
+            return;
+        }
+
+        try {
+            const text = await navigator.clipboard.readText();
+            log.l("Clipboard text: " + text);
+            await sendText(text);
+        } catch (e) {
+            store.toast.set({
+                message: e.message,
+                type: "error"
+            });
+
+            log.e(e);
+        }
+    }
+
+    const sendText = async (text: string) => {
         if (text.length === 0) {
             return;
         }
@@ -76,7 +99,7 @@
 
 <div class="flex flex-col h-full">
 
-    {#if isConnected}
+    {#if isConnected || true}
         <form class="h-full flex flex-col" method="POST" on:submit|preventDefault={() => send()}>
             <div class="h-full flex flex-col justify-center">
                 <div class="mb-3">
@@ -107,6 +130,14 @@
             </div>
 
             <div class="flex-grow"/>
+
+            <Button class="mb-3" color="alternative" disabled={!isConnected || isSending} on:click={() => sendClipboard()}>
+                {#if (isSending)}
+                    <Spinner/>
+                {:else}
+                    Send clipboard
+                {/if}
+            </Button>
 
             <Button color="primary" disabled={!isConnected || isSending} type="submit">
                 {#if (isSending)}
