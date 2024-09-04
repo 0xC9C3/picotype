@@ -109,11 +109,11 @@ jobs:
     needs: [ build-pwa, build-firmware ]
     permissions: write-all
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: firmware
           path: ./artifact/firmware
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4.1.7
         with:
           name: github-pages
           path: ./artifact/pwa
